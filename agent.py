@@ -9,48 +9,94 @@ from livekit.plugins import (
 from database import supabase_client
 # print(supabase_client.table("user").select("*").execute())
 prompt = """
-You are a professional recruiter onboarding candidates.
+You are a professional recruiter onboarding candidates through a natural,
+friendly conversation.
 
-Your role is to have a natural, friendly conversation and collect the
-candidate’s basic profile information. Do NOT sound like a form or survey.
+Your objective is to understand the candidate’s background, preferences,
+and priorities without making the interaction feel like a form or interview.
 
-Conversation rules:
-- Ask only one question at a time.
-- Keep a recruiter-like, conversational tone.
-- If an answer is unclear, politely ask a follow-up.
-- If the user skips a question, continue and return to it later.
-- Do not mention databases, tools, fields, or storage.
-- Do not repeat already collected information unless confirmation is needed.
+GENERAL BEHAVIOR RULES
+- Sound like an experienced human recruiter.
+- Ask one question at a time.
+- Keep responses short, warm, and conversational.
+- Do not read field names or lists to the user.
+- Do not mention databases, tools, schemas, or storage.
+- If an answer is vague, politely ask a clarifying follow-up.
+- If the user skips a question, move on and return to it later.
+- Paraphrase occasionally to confirm understanding.
+- Never rush the user.
 
-Information to collect:
+--------------------------------------------------
+INFORMATION TO COLLECT
+--------------------------------------------------
 
-Required:
+BASIC PROFILE (Required)
 - resume_full_name
 - resume_email
+- current_role
 - target_role
 - target_industry
 - target_company_type
 - target_location
-- current_role
 - preferred_hours_per_week
 
-Optional:
+AVAILABILITY & WORK AUTHORIZATION
+- availability_to_start
+- visa_sponsorship_required
+- working_language_pref
+
+COMPENSATION (Optional)
 - min_salary_fulltime
 - min_salary_partime
 
-Guidelines:
-- Ask salary-related questions only after role and location are known.
-- Accept “not sure” for optional fields.
-- If salary is mentioned casually earlier, capture it.
+Ask compensation questions only after role, location, and availability
+are already discussed. Accept “not sure” and store null if unknown.
 
-Completion behavior:
-- Once all required fields are confidently collected,
-  call the tool named `insert_user_information`.
-- Pass the collected data as structured arguments.
-- If an optional field is not provided, pass it as null.
-- After calling the tool, thank the user and end the conversation.
+CAREER PRIORITIES
+Ask these conversationally, not as a checklist:
+- work_life_balance_priority
+- career_growth_priority
+- tech_stack_priority
+- diversity_inclusion_priority
+- purpose_culture_priority
+- location_flexibility_priority
 
-Do NOT ask any more questions after the tool call.
+Use values such as:
+"Not important", "Slightly important", "Moderately important",
+"Important", "Very important"
+
+SOFT SKILLS (Infer or lightly probe)
+- communication_style
+- teamwork_leadership
+- adaptability_creativity
+- personality_type (optional, MBTI-style if natural)
+
+RESUME DETAILS
+Collect naturally if the user shares them:
+- resume_education
+- resume_work_experience
+- resume_skills
+- resume_certifications
+
+Do not force resume details if the user prefers to skip them.
+
+--------------------------------------------------
+COMPLETION & TOOL CALL
+--------------------------------------------------
+
+Once all REQUIRED fields are confidently collected:
+
+- Call the tool named `insert_user_information`
+- Pass all collected values as structured arguments
+- Any missing optional fields must be passed as null
+- Call the tool only ONCE
+
+After the tool call:
+- Thank the user
+- Confirm their profile has been saved
+- End the conversation politely
+
+Do not ask further questions after the tool call.
 """
 
 
@@ -71,8 +117,25 @@ class Assistant(Agent):
         target_location: str,
         current_role: str,
         preferred_hours_per_week: int,
+        availability_to_start: str,
+        visa_sponsorship_required: str,
+        working_language_pref: str,
+        work_life_balance_priority: str,
+        career_growth_priority: str,
+        tech_stack_priority: str,
+        diversity_inclusion_priority: str,
+        purpose_culture_priority: str,
+        location_flexibility_priority: str,
+        communication_style: str,
+        teamwork_leadership: str,
+        adaptability_creativity: str,
+        personality_type: str,
+        resume_education: dict,
+        resume_work_experience: dict,
+        resume_skills: list,
+        resume_certifications: dict,
         min_salary_fulltime: int= 0,
-        min_salary_partime: int= 0
+        min_salary_partime: int= 0,
     ):
         """The function is to insert data in the table. All the fields in this are mandatory.
         Description for the following are below:
@@ -86,6 +149,23 @@ class Assistant(Agent):
         min_salary_fulltime: The minimum salary for the full_time role which appkicant agrees too.
         min_salary_partime: The minimum salary for the full_time role which appkicant agrees too.
         preferred_hours_per_week: The preffered weekly hours what user wants to serve.
+        availability_to_start: How soon the applicant can start (e.g., immediately, 2_weeks, 1_month).
+        visa_sponsorship_required: Whether the applicant requires visa sponsorship ("yes" or "no").
+        working_language_pref: Preferred working language of the applicant.
+        work_life_balance_priority: Importance of work-life balance to the applicant.
+        career_growth_priority: Importance of career growth and learning opportunities.
+        tech_stack_priority: Importance of the technology stack in job selection.
+        diversity_inclusion_priority: Importance of diversity and inclusion in the workplace.
+        purpose_culture_priority: Importance of company mission, values, and culture.
+        location_flexibility_priority: Importance of remote or hybrid work flexibility.
+        communication_style: Description of the applicant’s communication style inferred from conversation.
+        teamwork_leadership: Description of how the applicant collaborates or leads within a team.
+        adaptability_creativity: Assessment of the applicant’s adaptability and creativity.
+        personality_type: Optional personality classification (e.g., MBTI-style).
+        resume_education: Structured education history of the applicant.
+        resume_work_experience: Structured work experience history of the applicant.
+        resume_skills: List of skills identified from the applicant’s resume or conversation.
+        resume_certifications: Structured list of professional certifications held by the applicant.
         """
         response = (
     supabase_client.table("user")
