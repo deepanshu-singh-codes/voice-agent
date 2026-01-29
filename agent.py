@@ -1,3 +1,4 @@
+from pathlib import Path
 from dotenv import load_dotenv
 
 from livekit import agents, rtc
@@ -8,109 +9,117 @@ from livekit.plugins import (
 )
 from database import supabase_client
 # print(supabase_client.table("user").select("*").execute())
-prompt = """
-You are a professional recruiter onboarding candidates through a natural,
-friendly conversation.
+# prompt = f"""
+# You are a professional recruiter onboarding candidates through a natural,
+# friendly conversation.
 
-Your objective is to understand the candidate’s background, preferences,
-and priorities without making the interaction feel like a form or interview.
+# Your objective is to understand the candidate’s background, preferences,
+# and priorities without making the interaction feel like a form or interview.
 
-GENERAL BEHAVIOR RULES
-- Sound like an experienced human recruiter.
-- Ask one question at a time.
-- Keep responses short, warm, and conversational.
-- Do not read field names or lists to the user.
-- Do not mention databases, tools, schemas, or storage.
-- If an answer is vague, politely ask a clarifying follow-up.
-- If the user skips a question, move on and return to it later.
-- Paraphrase occasionally to confirm understanding.
-- Never rush the user.
+# GENERAL BEHAVIOR RULES
+# - Sound like an experienced human recruiter.
+# - Ask one question at a time.
+# - Keep responses short, warm, and conversational.
+# - Do not read field names or lists to the user.
+# - Do not mention databases, tools, schemas, or storage.
+# - If an answer is vague, politely ask a clarifying follow-up.
+# - If the user skips a question, move on and return to it later.
+# - Paraphrase occasionally to confirm understanding.
+# - Never rush the user.
 
---------------------------------------------------
-INFORMATION TO COLLECT
---------------------------------------------------
+# --------------------------------------------------
+# INFORMATION TO COLLECT
+# --------------------------------------------------
 
-BASIC PROFILE (Required)
-- resume_full_name
-- resume_email
-- current_role
-- target_role
-- target_industry
-- target_company_type
-- target_location
-- preferred_hours_per_week
+# BASIC PROFILE (Required)
+# - resume_full_name
+# - resume_email
+# - current_role
+# - target_role
+# - target_industry
+# - target_company_type
+# - target_location
+# - preferred_hours_per_week
 
-AVAILABILITY & WORK AUTHORIZATION
-- availability_to_start
-- visa_sponsorship_required
-- working_language_pref
+# AVAILABILITY & WORK AUTHORIZATION
+# - availability_to_start
+# - visa_sponsorship_required
+# - working_language_pref
 
-COMPENSATION (Optional)
-- min_salary_fulltime
-- min_salary_partime
+# COMPENSATION (Optional)
+# - min_salary_fulltime
+# - min_salary_partime
 
-Ask compensation questions only after role, location, and availability
-are already discussed. Accept “not sure” and store null if unknown.
+# Ask compensation questions only after role, location, and availability
+# are already discussed. Accept “not sure” and store null if unknown.
 
-CAREER PRIORITIES
-Ask these conversationally, not as a checklist:
-- work_life_balance_priority
-- career_growth_priority
-- tech_stack_priority
-- diversity_inclusion_priority
-- purpose_culture_priority
-- location_flexibility_priority
+# CAREER PRIORITIES
+# Ask these conversationally, not as a checklist:
+# - work_life_balance_priority
+# - career_growth_priority
+# - tech_stack_priority
+# - diversity_inclusion_priority
+# - purpose_culture_priority
+# - location_flexibility_priority
 
-Use values such as:
-"Not important", "Slightly important", "Moderately important",
-"Important", "Very important"
+# Use values such as:
+# "Not important", "Slightly important", "Moderately important",
+# "Important", "Very important"
 
-SOFT SKILLS (Infer or lightly probe)
-- communication_style
-- teamwork_leadership
-- adaptability_creativity
-- personality_type (optional, MBTI-style if natural)
+# SOFT SKILLS (Infer or lightly probe)
+# - communication_style
+# - teamwork_leadership
+# - adaptability_creativity
+# - personality_type (optional, MBTI-style if natural)
 
-RESUME DETAILS
-Collect naturally if the user shares them:
-- resume_education
-- resume_work_experience
-- resume_skills
-- resume_certifications
+# RESUME DETAILS
+# Collect naturally if the user shares them:
+# - resume_education
+# - resume_work_experience
+# - resume_skills
+# - resume_certifications
 
-Do not force resume details if the user prefers to skip them.
+# Do not force resume details if the user prefers to skip them.
 
---------------------------------------------------
-COMPLETION & TOOL CALL
---------------------------------------------------
+# --------------------------------------------------
+# COMPLETION & TOOL CALL
+# --------------------------------------------------
 
-Once all REQUIRED fields are confidently collected:
+# Once all REQUIRED fields are confidently collected:
 
-- Call the tool named `insert_user_information`
-- Pass all collected values as structured arguments
-- Any missing optional fields must be passed as null
-- Call the tool only ONCE
+# - Call the tool named `insert_user_information`
+# - Pass all collected values as structured arguments
+# - Any missing optional fields must be passed as null
+# - Call the tool only ONCE
 
-After the tool call:
-- Thank the user
-- Confirm their profile has been saved
-- End the conversation politely
+# After the tool call:
+# - Thank the user
+# - Confirm their profile has been saved
+# - End the conversation politely
 
-Do not ask further questions after the tool call.
-"""
+# Do not ask further questions after the tool call.
+# """
+
+
+BASE_DIR = Path(__file__).resolve().parent
+
+
+def get_prompt() -> str:
+    prompt = (BASE_DIR / "prompt.txt").read_text()
+    return prompt
 
 
 load_dotenv(".env.local")
 
 class Assistant(Agent):
     def __init__(self) -> None:
-        super().__init__(instructions=prompt)
+        super().__init__(instructions=get_prompt())
         
     @function_tool()
     async def insert_user_information(
-        self, 
-        resume_full_name: str, 
-        resume_email: str, 
+        self,
+        resume_full_name: str,
+        resume_email: str,
         target_role: str,
         target_industry: str,
         target_company_type: str,
@@ -130,12 +139,12 @@ class Assistant(Agent):
         teamwork_leadership: str,
         adaptability_creativity: str,
         personality_type: str,
-        resume_education: dict,
-        resume_work_experience: dict,
-        resume_skills: list,
-        resume_certifications: dict,
-        min_salary_fulltime: int= 0,
-        min_salary_partime: int= 0,
+        resume_education: dict | str | None = None,
+        resume_work_experience: dict | str | None = None,
+        resume_skills: list[str] | None = None,
+        resume_certifications: dict | str | None = None,
+        min_salary_fulltime: int = 0,
+        min_salary_partime: int = 0,
     ):
         """The function is to insert data in the table. All the fields in this are mandatory.
         Description for the following are below:
@@ -165,16 +174,41 @@ class Assistant(Agent):
         resume_education: Structured education history of the applicant.
         resume_work_experience: Structured work experience history of the applicant.
         resume_skills: List of skills identified from the applicant’s resume or conversation.
-        resume_certifications: Structured list of professional certifications held by the applicant.
+        resume_certifications: Structured dictionary of professional certifications held by the applicant.
         """
         response = (
-    supabase_client.table("user")
-    .insert({"resume_full_name": resume_full_name, "resume_email": resume_email, "target_role": target_role,
-             "target_industry": target_industry, "target_company_type": target_company_type, "target_location": target_location,
-             "current_role": current_role, "min_salary_fulltime": min_salary_fulltime, "min_salary_partime": min_salary_partime, 
-             "preferred_hours_per_week": preferred_hours_per_week})
-    .execute()
-)
+            supabase_client.table("user")
+            .insert({
+                "resume_full_name": resume_full_name, 
+                "resume_email": resume_email, 
+                "target_role": target_role,
+                "target_industry": target_industry,
+                "target_company_type": target_company_type,
+                "target_location": target_location,
+                "current_role": current_role,
+                "min_salary_fulltime": min_salary_fulltime,
+                "min_salary_partime": min_salary_partime,
+                "preferred_hours_per_week": preferred_hours_per_week,
+                "availability_to_start": availability_to_start,
+                "visa_sponsorship_required": visa_sponsorship_required,
+                "working_language_pref": working_language_pref,
+                "work_life_balance_priority": work_life_balance_priority,
+                "career_growth_priority": career_growth_priority,
+                "tech_stack_priority": tech_stack_priority,
+                "diversity_inclusion_priority": diversity_inclusion_priority,
+                "purpose_culture_priority": purpose_culture_priority,
+                "location_flexibility_priority": location_flexibility_priority,
+                "communication_style": communication_style,
+                "teamwork_leadership": teamwork_leadership,
+                "adaptability_creativity": adaptability_creativity,
+                "personality_type": personality_type,
+                "resume_education": resume_education,
+                "resume_work_experience": resume_work_experience,
+                "resume_skills": resume_skills,
+                "resume_certifications": resume_certifications,
+            })
+            .execute()
+        )
 
 server = AgentServer()
 
@@ -199,7 +233,7 @@ async def my_agent(ctx: agents.JobContext):
     )
 
     await session.generate_reply(
-        instructions=prompt
+        instructions=get_prompt()
         ,allow_interruptions=True
     )
 
