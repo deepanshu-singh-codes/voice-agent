@@ -61,22 +61,26 @@ class Assistant(Agent):
         super().__init__(instructions=prompt)
         
     @function_tool()
-    def insert_user_information(self, resume_full_name: str, 
-                                resume_email: str, 
-                                target_role: str,
-                                target_industry: str,
-                                target_company_type: str,
-                                target_location: str,
-                                current_role: str,
-                                preferred_hours_per_week: str,
-                                min_salary_fulltime: int= None,
-                                min_salary_partime: int= None,):
+    async def insert_user_information(
+        self, 
+        resume_full_name: str, 
+        resume_email: str, 
+        target_role: str,
+        target_industry: str,
+        target_company_type: str,
+        target_location: str,
+        current_role: str,
+        preferred_hours_per_week: int,
+        min_salary_fulltime: int= 0,
+        min_salary_partime: int= 0
+    ):
         """The function is to insert data in the table. All the fields in this are mandatory.
         Description for the following are below:
         resume_full_name: full name for the applicant.
         resume_email: email of the applicant
         target_role: The role user targetting.
         target_industry: The industry looked by the applicant.
+        target_location: The location for which user is targetting for the user.
         target_company_type: The company types for which user is targetting for the user.
         current_role: The curreny designation or role of the user.
         min_salary_fulltime: The minimum salary for the full_time role which appkicant agrees too.
@@ -85,9 +89,9 @@ class Assistant(Agent):
         """
         response = (
     supabase_client.table("user")
-    .insert({"resume_full_name": resume_full_name, "resume_email": resume_email, "targtet_role": target_role,
+    .insert({"resume_full_name": resume_full_name, "resume_email": resume_email, "target_role": target_role,
              "target_industry": target_industry, "target_company_type": target_company_type, "target_location": target_location,
-             "current_role": current_role, "min_salary_fulltime": min_salary_fulltime, "min_salart_partime": min_salary_partime, 
+             "current_role": current_role, "min_salary_fulltime": min_salary_fulltime, "min_salary_partime": min_salary_partime, 
              "preferred_hours_per_week": preferred_hours_per_week})
     .execute()
 )
