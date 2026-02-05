@@ -220,12 +220,16 @@ async def my_agent(ctx: agents.JobContext):
         llm=openai.realtime.RealtimeModel(
             voice="coral"
         )
+        use_tts_aligned_transcript=True,
     )
 
     await session.start(
         room=ctx.room,
         agent=Assistant(),
         room_options=room_io.RoomOptions(
+            text_output=room_io.TextOutputOptions(
+            sync_transcription=False
+        ),
             audio_input=room_io.AudioInputOptions(
                 noise_cancellation=lambda params: noise_cancellation.BVCTelephony() if params.participant.kind == rtc.ParticipantKind.PARTICIPANT_KIND_SIP else noise_cancellation.BVC(),
             ),
