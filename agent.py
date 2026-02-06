@@ -209,6 +209,82 @@ class Assistant(Agent):
             })
             .execute()
         )
+        
+        return {"status": "success", "message": "User information saved successfully"}
+    
+    @function_tool()
+    async def assess_candidate_performance(
+        self,
+        resume_email: str,
+        communication_clarity: float,
+        technical_depth: float,
+        domain_expertise: float,
+        problem_solving_rigor: float,
+        ownership_accountability: float,
+        experience_consistency: float,
+        impact_evidence: float,
+        overall_credibility: float,
+    ):
+        """Assess the candidate's performance based on the full conversation.
+        This function analyzes the candidate's responses throughout the conversation
+        and generates assessment scores across multiple dimensions.
+        
+        Args:
+            resume_email: Email of the candidate being assessed (used to link to user record)
+            communication_clarity: Score from 0.0 to 1.0 indicating clarity of communication
+            technical_depth: Score from 0.0 to 1.0 indicating depth of technical knowledge
+            domain_expertise: Score from 0.0 to 1.0 indicating expertise in their domain
+            problem_solving_rigor: Score from 0.0 to 1.0 indicating problem-solving approach
+            ownership_accountability: Score from 0.0 to 1.0 indicating ownership and accountability
+            experience_consistency: Score from 0.0 to 1.0 indicating consistency in experience claims
+            impact_evidence: Score from 0.0 to 1.0 indicating evidence of impact provided
+            overall_credibility: Score from 0.0 to 1.0 indicating overall credibility assessment
+        """
+        # For now, print the assessment scores since the table doesn't exist yet
+        assessment_data = {
+            "resume_email": resume_email,
+            "communication_clarity": communication_clarity,
+            "technical_depth": technical_depth,
+            "domain_expertise": domain_expertise,
+            "problem_solving_rigor": problem_solving_rigor,
+            "ownership_accountability": ownership_accountability,
+            "experience_consistency": experience_consistency,
+            "impact_evidence": impact_evidence,
+            "overall_credibility": overall_credibility,
+        }
+        
+        print("\n" + "="*60)
+        print("CANDIDATE ASSESSMENT SCORES")
+        print("="*60)
+        print(f"Email: {resume_email}")
+        print(f"Communication Clarity: {communication_clarity:.2f}")
+        print(f"Technical Depth: {technical_depth:.2f}")
+        print(f"Domain Expertise: {domain_expertise:.2f}")
+        print(f"Problem Solving Rigor: {problem_solving_rigor:.2f}")
+        print(f"Ownership & Accountability: {ownership_accountability:.2f}")
+        print(f"Experience Consistency: {experience_consistency:.2f}")
+        print(f"Impact Evidence: {impact_evidence:.2f}")
+        print(f"Overall Credibility: {overall_credibility:.2f}")
+        print("="*60 + "\n")
+        
+        # TODO: Once the assessment table is created in Supabase, uncomment this:
+        # response = (
+        #     supabase_client.table("assessment")
+        #     .insert({
+        #         "resume_email": resume_email,
+        #         "communication_clarity": communication_clarity,
+        #         "technical_depth": technical_depth,
+        #         "domain_expertise": domain_expertise,
+        #         "problem_solving_rigor": problem_solving_rigor,
+        #         "ownership_accountability": ownership_accountability,
+        #         "experience_consistency": experience_consistency,
+        #         "impact_evidence": impact_evidence,
+        #         "overall_credibility": overall_credibility,
+        #     })
+        #     .execute()
+        # )
+        
+        return {"status": "success", "message": "Assessment scores generated successfully"}
 
 server = AgentServer()
 
@@ -219,7 +295,7 @@ async def my_agent(ctx: agents.JobContext):
     session = AgentSession(
         llm=openai.realtime.RealtimeModel(
             voice="coral"
-        )
+        ),
         use_tts_aligned_transcript=True,
     )
 
