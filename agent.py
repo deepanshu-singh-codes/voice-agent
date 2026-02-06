@@ -240,51 +240,43 @@ class Assistant(Agent):
             impact_evidence: Score from 0.0 to 1.0 indicating evidence of impact provided
             overall_credibility: Score from 0.0 to 1.0 indicating overall credibility assessment
         """
-        # For now, print the assessment scores since the table doesn't exist yet
-        assessment_data = {
-            "resume_email": resume_email,
-            "communication_clarity": communication_clarity,
-            "technical_depth": technical_depth,
-            "domain_expertise": domain_expertise,
-            "problem_solving_rigor": problem_solving_rigor,
-            "ownership_accountability": ownership_accountability,
-            "experience_consistency": experience_consistency,
-            "impact_evidence": impact_evidence,
-            "overall_credibility": overall_credibility,
-        }
-        
-        print("\n" + "="*60)
-        print("CANDIDATE ASSESSMENT SCORES")
-        print("="*60)
-        print(f"Email: {resume_email}")
-        print(f"Communication Clarity: {communication_clarity:.2f}")
-        print(f"Technical Depth: {technical_depth:.2f}")
-        print(f"Domain Expertise: {domain_expertise:.2f}")
-        print(f"Problem Solving Rigor: {problem_solving_rigor:.2f}")
-        print(f"Ownership & Accountability: {ownership_accountability:.2f}")
-        print(f"Experience Consistency: {experience_consistency:.2f}")
-        print(f"Impact Evidence: {impact_evidence:.2f}")
-        print(f"Overall Credibility: {overall_credibility:.2f}")
-        print("="*60 + "\n")
-        
-        # TODO: Once the assessment table is created in Supabase, uncomment this:
-        # response = (
-        #     supabase_client.table("assessment")
-        #     .insert({
-        #         "resume_email": resume_email,
-        #         "communication_clarity": communication_clarity,
-        #         "technical_depth": technical_depth,
-        #         "domain_expertise": domain_expertise,
-        #         "problem_solving_rigor": problem_solving_rigor,
-        #         "ownership_accountability": ownership_accountability,
-        #         "experience_consistency": experience_consistency,
-        #         "impact_evidence": impact_evidence,
-        #         "overall_credibility": overall_credibility,
-        #     })
-        #     .execute()
-        # )
-        
-        return {"status": "success", "message": "Assessment scores generated successfully"}
+        # Store assessment scores in interview_analytics table
+        try:
+            response = (
+                supabase_client.table("interview_analytics")
+                .insert({
+                    "resume_email": resume_email,
+                    "communication_clarity": communication_clarity,
+                    "technical_depth": technical_depth,
+                    "domain_expertise": domain_expertise,
+                    "problem_solving_rigor": problem_solving_rigor,
+                    "ownership_accountability": ownership_accountability,
+                    "experience_consistency": experience_consistency,
+                    "impact_evidence": impact_evidence,
+                    "overall_credibility": overall_credibility,
+                })
+                .execute()
+            )
+            
+            # Log the assessment scores for debugging
+            print("\n" + "="*60)
+            print("CANDIDATE ASSESSMENT SCORES - SAVED TO DATABASE")
+            print("="*60)
+            print(f"Email: {resume_email}")
+            print(f"Communication Clarity: {communication_clarity:.2f}")
+            print(f"Technical Depth: {technical_depth:.2f}")
+            print(f"Domain Expertise: {domain_expertise:.2f}")
+            print(f"Problem Solving Rigor: {problem_solving_rigor:.2f}")
+            print(f"Ownership & Accountability: {ownership_accountability:.2f}")
+            print(f"Experience Consistency: {experience_consistency:.2f}")
+            print(f"Impact Evidence: {impact_evidence:.2f}")
+            print(f"Overall Credibility: {overall_credibility:.2f}")
+            print("="*60 + "\n")
+            
+            return {"status": "success", "message": "Assessment scores saved successfully to interview_analytics table"}
+        except Exception as e:
+            print(f"\nError saving assessment scores to database: {e}\n")
+            return {"status": "error", "message": f"Failed to save assessment scores: {str(e)}"}
 
 server = AgentServer()
 
