@@ -194,7 +194,7 @@ server = AgentServer()
 async def my_agent(ctx: agents.JobContext):
     session = AgentSession(
         llm=openai.realtime.RealtimeModel(
-            voice="coral"
+            voice="ash"
         ),
         use_tts_aligned_transcript=True,
     )
