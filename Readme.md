@@ -108,7 +108,3 @@ The interview workflow and assistant behavior are defined in `prompt.txt`, makin
 - Recruiter dashboard
 
 ---
-
-## License
-
-This project is licensed under the **MIT License**.
